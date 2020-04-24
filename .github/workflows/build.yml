@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Unity - Build
+env:
+  BUILD_NAME: Quest-App
+  UNITY_VERSION: 2019.2.21f1
+  PROJECT_PATH: Quest-VRTK-Boilerplate
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+# Controls when the action will run. Triggers the workflow on push or pull request 
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:  
+  # Builds the Unity Project
+  build:
+    name: Build Unity Project
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+        - Android
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        lfs: true
+    - uses: actions/cache@v1.1.0
+      with:
+        path: Library
+        key: Library-${{ env.BUILD_NAME }}-${{ env.TARGET_PLATFORM }}
+        restore-keys: |
+          Library-${{ env.BUILD_NAME }}-${{ env.TARGET_PLATFORM }}
+          Library-${{ env.BUILD_NAME }}-
+          Library-
+    - name: Unity - Build
+      id: build
+      uses: webbertakken/unity-builder@v0.11
+      with:
+        unityVersion: ${{ env.UNITY_VERSION }}
+        targetPlatform: ${{ matrix.targetPlatform }}
+        buildName: ${{ env.BUILD_NAME }}
+        buildsPath: build/${{ matrix.targetPlatform }}/
+        buildMethod: BuildCommand.PerformBuild
+        customParameters: -nographics
+    - uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.BUILD_NAME }}
+        path: build/${{ matrix.targetPlatform }}/
