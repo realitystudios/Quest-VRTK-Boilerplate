@@ -1,0 +1,44 @@
+name: Unity - Testing
+env:
+  BUILD_NAME: Quest-App
+  TARGET_PLATFORM: Android
+  UNITY_VERSION: 2019.2.21f1
+  PROJECT_PATH: Quest-VRTK-Boilerplate
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+    
+jobs:
+  # Runs the Unity's Testing Suite
+  test:
+    name: Run Unity Testing Suite
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testMode:
+          - playmode
+          - editmode
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          lfs: true
+      - uses: actions/cache@v1.1.0
+        with:
+          path: Library
+          key: Library
+      - name: Unity - Test
+        id: tests
+        uses: webbertakken/unity-test-runner@v1.5
+        with: 
+          unityVersion: ${{ env.UNITY_VERSION }}
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: ${{ matrix.testMode }}-artifacts
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ env.BUILD_NAME }}_${{ matrix.testMode }}_results
+          path: ${{ steps.tests.outputs.artifactsPath }}
